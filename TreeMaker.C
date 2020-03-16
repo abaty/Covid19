@@ -6,17 +6,19 @@
 #include <string>
 
 
-void fillUS(std::string stateCountry, int lineNum, std::vector<int> &totals, int counter, int cases){
+void fillUS(std::string locality, std::string stateCountry, int lineNum, std::vector<int> &totals, int counter, int cases){
 
   int entryNum = lineNum-2;
 
-  if( stateCountry.compare("US") == 0 ){
-    if((entryNum>90 && entryNum < 160) || entryNum==420 || entryNum==424 || entryNum==440 ){
+  if( stateCountry.compare("US") == 0 && locality.find("Princess") == string::npos ){
+    if((entryNum>90 && entryNum < 160) || locality.compare("Alabama") == 0 || locality.compare("Puerto_Rico") == 0 || locality.compare("Virgin_Islands_U.S.") == 0 ){
 
       std::cout << entryNum << " " << counter <<  std::endl;
 
-      if(entryNum==100) totals.push_back(cases);
-      else totals.at(counter) += cases;
+      //make the vector on washington (first state)
+      //otherwise if the vector has already been created, add the cases
+      if( locality.compare("Washington") == 0) totals.push_back(cases);
+      else if( totals.size() > 0 )             totals.at(counter) += cases;
       
     }
   }
@@ -88,7 +90,7 @@ void TreeMaker(std::string input){
       if (foundNext != string::npos){ 
         int nCases = std::stoi( buffer.substr( foundLast+1, foundNext-(foundLast+1) ) );
         confirmedCases.push_back( nCases );
-        fillUS( stateCountry, line, USTotals, dayIndex-1 , nCases);
+        fillUS(locality, stateCountry, line, USTotals, dayIndex-1 , nCases);
         day.push_back( dayIndex );
         dayIndex++;
         foundLast = foundNext;
@@ -97,7 +99,7 @@ void TreeMaker(std::string input){
       else{
         int nCases = std::stoi( buffer.substr( foundLast+1 ) );
         confirmedCases.push_back( nCases );
-        fillUS( stateCountry, line, USTotals, dayIndex-1 , nCases);
+        fillUS(locality, stateCountry, line, USTotals, dayIndex-1 , nCases);
         day.push_back( dayIndex );
         dayIndex++;
         if(firstCase==-1 && nCases!=0) firstCase = confirmedCases.size()-1; 

@@ -1,6 +1,8 @@
+#include "TF1.h"
 #include "TH1D.h"
 #include "TFile.h"
 #include "TTree.h"
+#include "TPaveStats.h"
 #include <iostream>
 #include <string>
 #include <vector>
@@ -39,17 +41,54 @@ void PlotMaker(std::string inputFile){
 
     std::cout << confirmedCases->size() << " " << firstCase << std::endl;
 
-    TH1D * h = new TH1D(Form("%s",(*locality+"_"+*stateCountry).c_str()),";Days Since First Case;Cases",(int)confirmedCases->size()-firstCase+1,0,(int)confirmedCases->size()-firstCase+1);
+    TH1D * h = new TH1D(Form("%s",(*locality+"_"+*stateCountry).c_str()),Form("%s;Days Since First Recorded Case in Data;Cases",(*locality+"_"+*stateCountry).c_str()),(int)confirmedCases->size()-firstCase+1,-0.5,(int)confirmedCases->size()-firstCase+0.5);
     t->Draw(Form("(day-firstCaseDay)>>%s",(*locality+"_"+*stateCountry).c_str()),"confirmedCases*(confirmedCases>0)","HIST",1,i);
-    h->SetStats(0);
+    for(int i = 1; i<h->GetSize()-1; i++){
+      if( h->GetBinContent(i) > 0) h->SetBinError( i , TMath::Sqrt(h->GetBinContent(i)));
+    }
+    //h->SetStats(0);
     h->SetFillColor(kRed+1);
     h->SetLineColor(kBlack);
+    h->SetLineWidth(2);
     format(h);
-    h->Draw("HIST F");
+
+    //do a fit
+    gStyle->SetOptStat(0);
+    gStyle->SetOptFit(1);    
+    gStyle->SetStatX(0.55);
+    gStyle->SetStatY(0.9);
+    
+    int offset = 0;
+    if( stateCountry->compare("US") == 0 ) offset = 6;
+    else offset = 15;
+
+    TF1 * f1 = new TF1("f1","[0] * TMath::Exp([1] * (x-[2]))",confirmedCases->size()-firstCase+0.5 - offset,confirmedCases->size()-firstCase+0.5);
+    f1->SetParameters(1,0,0);
+    f1->SetParNames("A","k","t0");
+    f1->SetLineColor(kBlue);
+    h->Fit("f1","R");
+    h->DrawCopy("F HIST E1");
+    h->Draw("p E1 same");
+    f1->Draw("same");
+
+    TLegend * l = new TLegend(0.1,0.45,0.5,0.7);
+    l->SetBorderSize(0);
+    l->SetFillStyle(0);
+    l->AddEntry((TObject*)0,"N(t) = Ae^{k(t-t0)}","");
+    l->AddEntry((TObject*)0,Form("Doubling Rate: %1.2f days",TMath::Log(2)/f1->GetParameter(1)),"");
+    l->AddEntry((TObject*)0,Form("Cases in 5 days: %3.0f",f1->Eval(confirmedCases->size()-firstCase+0.5 + 5)),"");
+    l->AddEntry((TObject*)0,Form("Cases in 15 days: %3.0f",f1->Eval(confirmedCases->size()-firstCase+0.5 + 15)),"");
+    l->AddEntry((TObject*)0,Form("Cases in 30 days: %3.0f",f1->Eval(confirmedCases->size()-firstCase+0.5 + 30)),"");
+    l->Draw("same");
+
+    TPaveStats *st = (TPaveStats*)h->FindObject("stats");
+ 
     c1->SaveAs(Form("plots/%s.png",(*locality+"_"+*stateCountry).c_str()));
 
     h->Write();
-
+    delete st;
+    delete f1;
     delete h;
+    delete l;
   }
 }
