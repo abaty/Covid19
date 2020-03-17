@@ -59,8 +59,8 @@ void PlotMaker(std::string inputFile){
     gStyle->SetStatY(0.9);
     
     int offset = 0;
-    if( stateCountry->compare("US") == 0 ) offset = 6;
-    else offset = 15;
+    if( stateCountry->compare("US") == 0 ) offset = 7;
+    else offset = 16;
 
     TF1 * f1 = new TF1("f1","[0] * TMath::Exp([1] * (x-[2]))",confirmedCases->size()-firstCase+0.5 - offset,confirmedCases->size()-firstCase+0.5);
     f1->SetParameters(1,0,0);
