@@ -84,6 +84,7 @@ void PlotMaker(std::string inputFile){
     TPaveStats *st = (TPaveStats*)h->FindObject("stats");
  
     c1->SaveAs(Form("plots/%s.png",(*locality+"_"+*stateCountry).c_str()));
+    c1->SaveAs(Form("plots/%s.pdf",(*locality+"_"+*stateCountry).c_str()));
 
     h->Write();
     delete st;
